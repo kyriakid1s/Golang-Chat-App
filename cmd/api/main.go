@@ -33,6 +33,7 @@ func main() {
 	flag.Parse()
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
 	db, err := connectDB(cfg)
 	if err != nil {
 		log.Fatal(err)

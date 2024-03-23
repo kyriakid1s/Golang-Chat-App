@@ -2,13 +2,23 @@ package jwt
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 )
 
-var secret []byte = []byte("dofnoanoinfoenfonofnonfds")
+var secret []byte
 
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Println("Error loading .env")
+		os.Exit(1)
+	}
+	secret = []byte(os.Getenv("JWT_SECRET"))
+}
 func NewToken(username string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
