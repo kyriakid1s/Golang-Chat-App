@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"chatapp.kyriakidis.net/internal/validator"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -16,12 +17,17 @@ var AnonymousUser = &User{}
 type User struct {
 	Username  string    `json:"username"`
 	Password  string    `json:"password,omitempty"`
-	LastSeen  time.Time `json:"last_seen"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
 type UserModel struct {
 	DB *redis.Client
+}
+
+// Validate User
+func ValidateUser(v *validator.Validator, user *User) {
+	v.Check(user.Username != "", "username", "can not be empty")
+	v.Check(len(user.Password) >= 8, "password", "must be at least 8 characters")
 }
 
 func (m UserModel) Insert(user *User) error {
@@ -38,6 +44,14 @@ func (m UserModel) Insert(user *User) error {
 	if err != nil {
 		return err
 	}
+	//Add user to users
+	err = m.DB.SAdd(context.Background(), "users", user.Username).Err()
+	if err != nil {
+		//if err, delete the user
+		m.DB.Del(context.Background(), user.Username)
+		return err
+	}
+
 	return nil
 }
 

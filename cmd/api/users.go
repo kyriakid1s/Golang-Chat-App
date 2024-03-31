@@ -6,6 +6,7 @@ import (
 
 	"chatapp.kyriakidis.net/internal/data"
 	"chatapp.kyriakidis.net/internal/jwt"
+	"chatapp.kyriakidis.net/internal/validator"
 )
 
 func (app *application) registerHadler(w http.ResponseWriter, r *http.Request) {
@@ -13,6 +14,11 @@ func (app *application) registerHadler(w http.ResponseWriter, r *http.Request) {
 	err := app.readJSON(w, r, &user)
 	if err != nil {
 		app.badRequestResponse(w, r, err)
+		return
+	}
+	v := validator.New()
+	if data.ValidateUser(v, &user); !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
 		return
 	}
 	user.CreatedAt = time.Now()

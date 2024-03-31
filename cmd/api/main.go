@@ -47,7 +47,8 @@ func main() {
 
 	err = app.serve()
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err.Error())
+		os.Exit(1)
 	}
 
 }
