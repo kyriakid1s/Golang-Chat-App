@@ -5,6 +5,7 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"sync"
 
 	"chatapp.kyriakidis.net/internal/data"
 	"github.com/redis/go-redis/v9"
@@ -22,6 +23,7 @@ type application struct {
 	config config
 	models data.Models
 	logger *slog.Logger
+	wg     sync.WaitGroup
 }
 
 func main() {
