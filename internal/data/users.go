@@ -15,9 +15,15 @@ import (
 var AnonymousUser = &User{}
 
 type User struct {
-	Username  string    `json:"username"`
+	PublicUser
 	Password  string    `json:"password,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
+	Rooms     []string  `json:"rooms,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
+}
+
+type PublicUser struct {
+	Username string `json:"username"`
+	Online   bool   `json:"online"`
 }
 
 type UserModel struct {
@@ -55,7 +61,7 @@ func (m UserModel) Insert(user *User) error {
 	return nil
 }
 
-func (m UserModel) Get(username, password string) (*User, error) {
+func (m UserModel) Get(username, password string) (*PublicUser, error) {
 	userJSON := m.DB.Get(context.Background(), username).Val()
 	var user User
 	err := json.Unmarshal([]byte(userJSON), &user)
@@ -65,16 +71,37 @@ func (m UserModel) Get(username, password string) (*User, error) {
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
-	return &user, nil
+	user.Online = true
+	newUserJSON, err := json.Marshal(user)
+	if err != nil {
+		return nil, err
+	}
+	err = m.DB.Set(context.Background(), user.Username, newUserJSON, 0).Err()
+	if err != nil {
+		return nil, err
+	}
+	return &user.PublicUser, nil
 }
 
-func (m UserModel) GetByUsername(username string) (*User, error) {
+func (m UserModel) GetByUsername(username string) (*PublicUser, error) {
 	var user User
-	userJSON := m.DB.Get(context.Background(), username)
-	if errors.Is(userJSON.Err(), redis.Nil) {
+	userJSON, err := m.DB.Get(context.Background(), username).Result()
+	if errors.Is(err, redis.Nil) {
 		return nil, ErrNoRecordFound
 	}
-	err := json.Unmarshal([]byte(userJSON.Val()), &user)
+	err = json.Unmarshal([]byte(userJSON), &user)
+	if err != nil {
+		return nil, err
+	}
+	return &user.PublicUser, nil
+}
+func (m UserModel) GetByUsernamePrivate(username string) (*User, error) {
+	var user User
+	userJSON, err := m.DB.Get(context.Background(), username).Result()
+	if errors.Is(err, redis.Nil) {
+		return nil, ErrNoRecordFound
+	}
+	err = json.Unmarshal([]byte(userJSON), &user)
 	if err != nil {
 		return nil, err
 	}
@@ -83,4 +110,16 @@ func (m UserModel) GetByUsername(username string) (*User, error) {
 
 func (u *User) IsAnonymous() bool {
 	return u == AnonymousUser
+}
+
+func (m UserModel) GetUserForChat(usernames []string) ([]PublicUser, error) {
+	var users []PublicUser
+	for _, username := range usernames {
+		user, err := m.GetByUsername(username)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, *user)
+	}
+	return users, nil
 }

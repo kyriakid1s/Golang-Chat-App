@@ -12,10 +12,12 @@ var (
 
 type Models struct {
 	Users UserModel
+	Chats ChatModel
 }
 
 func NewModels(db *redis.Client) Models {
 	return Models{
 		Users: UserModel{DB: db},
+		Chats: ChatModel{DB: db},
 	}
 }

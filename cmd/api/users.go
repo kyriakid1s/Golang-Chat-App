@@ -27,14 +27,13 @@ func (app *application) registerHadler(w http.ResponseWriter, r *http.Request) {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
-	user.Password = ""
 	token, err := jwt.NewToken(user.Username)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
 	app.createCookie(w, "jwt", token, "/")
-	err = app.writeJSON(w, http.StatusCreated, envelope{"user": user}, nil)
+	err = app.writeJSON(w, http.StatusCreated, envelope{"user": user.PublicUser}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -51,13 +50,18 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 		app.badRequestResponse(w, r, err)
 		return
 	}
+	v := validator.New()
+	v.Check(input.Username != "", "username", "can not be empty")
+	v.Check(input.Password != "", "password", "can not be empty")
+	if !v.Valid() {
+		app.failedValidationResponse(w, r, v.Errors)
+		return
+	}
 	user, err := app.models.Users.Get(input.Username, input.Password)
 	if err != nil {
 		app.invalidCredentialsResponse(w, r)
 		return
 	}
-	//*Done this to omit password from response
-	user.Password = ""
 	//Token creation
 	token, err := jwt.NewToken(user.Username)
 	if err != nil {
@@ -65,9 +69,17 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	app.createCookie(w, "jwt", token, "/")
+
 	err = app.writeJSON(w, http.StatusOK, envelope{"user": user}, nil)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
+	}
+}
+func (app *application) getCurrentUserHandler(w http.ResponseWriter, r *http.Request) {
+	username := app.getUserContext(r).Username
+	err := app.writeJSON(w, http.StatusOK, envelope{"user": username}, nil)
+	if err != nil {
+		app.serverErrorResponse(w, r, err)
 	}
 }

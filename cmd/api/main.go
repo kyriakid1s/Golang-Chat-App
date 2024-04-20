@@ -46,7 +46,6 @@ func main() {
 		models: data.NewModels(db),
 		logger: logger,
 	}
-
 	err = app.serve()
 	if err != nil {
 		logger.Error(err.Error())
