@@ -28,8 +28,8 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 			}
 		}
 
-		username, err := jwt.VerifyToken(token.Value)
-		//TODO: Fix errors (switch)
+		username, err := jwt.VerifyToken(token.Value, app.config.jwt)
+		// TODO: Fix errors (switch)
 		if err != nil {
 			app.serverErrorResponse(w, r, err)
 			return

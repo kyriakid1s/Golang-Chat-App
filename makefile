@@ -22,8 +22,8 @@ race:
 	go run -race ./cmd/api -db-dsn=${db_dsn}
 
 ## run/api: run the cmd/api application
-run: confirm
-	go run ./cmd/api -db-dsn=${db_dsn}
+run: 
+	go run ./cmd/api -db-dsn=${db_dsn} -jwt=${JWT_SECRET}
 
 # ==================================================================================== #
 # QUALITY CONTROL

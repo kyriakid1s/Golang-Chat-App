@@ -27,7 +27,7 @@ func (app *application) registerHadler(w http.ResponseWriter, r *http.Request) {
 		app.serverErrorResponse(w, r, err)
 		return
 	}
-	token, err := jwt.NewToken(user.Username)
+	token, err := jwt.NewToken(user.Username, app.config.jwt)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -62,8 +62,8 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 		app.invalidCredentialsResponse(w, r)
 		return
 	}
-	//Token creation
-	token, err := jwt.NewToken(user.Username)
+	// Token creation
+	token, err := jwt.NewToken(user.Username, app.config.jwt)
 	if err != nil {
 		app.serverErrorResponse(w, r, err)
 		return
@@ -76,6 +76,7 @@ func (app *application) loginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
 func (app *application) getCurrentUserHandler(w http.ResponseWriter, r *http.Request) {
 	username := app.getUserContext(r).Username
 	err := app.writeJSON(w, http.StatusOK, envelope{"user": username}, nil)

@@ -17,6 +17,7 @@ type config struct {
 	db   struct {
 		dsn string
 	}
+	jwt string
 }
 
 type application struct {
@@ -28,7 +29,7 @@ type application struct {
 
 func main() {
 	var cfg config
-
+	flag.StringVar(&cfg.jwt, "jwt", "", "JWT Secret")
 	flag.IntVar(&cfg.port, "port", 4000, "Server's Port")
 	flag.StringVar(&cfg.env, "env", "development", "Enviroment (production | development)")
 	flag.StringVar(&cfg.db.dsn, "db-dsn", "", "Database dsn")
@@ -51,7 +52,6 @@ func main() {
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
-
 }
 
 func connectDB(cfg config) (*redis.Client, error) {
